@@ -2,9 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, X, LogIn, UserPlus } from "lucide-react";
+import { Loader2, X, ArrowUpRight } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
-import bizzLogo from "@/assets/bizz-logo.png";
 import { WelcomeScreen, WELCOME_SEEN_KEY } from "@/components/auth/welcome-screen";
 import { Celebration } from "@/components/auth/celebration";
 
@@ -403,11 +402,7 @@ function AuthPage() {
   );
 
   return (
-    <main className="relative grid min-h-screen place-items-end justify-center overflow-hidden px-5 text-white sm:place-items-center">
-      <div
-        aria-hidden
-        className="pointer-events-none fixed inset-0 bg-slate-950"
-      />
+    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 bg-cover bg-center opacity-40 grayscale"
@@ -415,62 +410,86 @@ function AuthPage() {
       />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20"
+        className="pointer-events-none fixed inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950"
+      />
+      {/* Amber flare */}
+      <div
+        aria-hidden
+        className="pointer-events-none fixed -left-20 -top-20 h-64 w-64 rounded-full bg-amber-500/10 blur-[100px]"
       />
 
+      {/* Vertical brand rail — right edge */}
+      <div className="absolute right-6 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-6">
+        <div className="h-24 w-px bg-amber-500/20" />
+        <div className="flex rotate-90 items-center gap-4 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.5em] text-amber-500">
+          <span className="block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
+          Bizz Automators
+        </div>
+        <div className="h-24 w-px bg-amber-500/20" />
+      </div>
+
       <div
-        className="relative w-full max-w-[430px]"
+        className="relative flex min-h-screen w-full max-w-[430px] flex-col p-8"
         style={{
-          paddingBottom: "calc(2.25rem + env(safe-area-inset-bottom))",
-          paddingTop: "2rem",
           transform: revealed ? "translate3d(0,0,0)" : "translate3d(0, 24px, 0)",
           opacity: revealed ? 1 : 0,
           transition: "transform 620ms cubic-bezier(0.22,1,0.36,1), opacity 520ms ease",
         }}
       >
-        <img
-          src={bizzLogo}
-          alt="Bizz Automators"
-          className="h-10 w-auto opacity-95"
-        />
-        <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.34em] text-white/40">
-          Bizz Automators
-        </p>
-        <h1 className="mt-6 font-display text-4xl font-bold leading-tight tracking-[-0.02em] text-white">
-          Welcome
-        </h1>
-        <p className="mt-2 text-sm text-slate-400">Simplify your business.</p>
+        <div className="mt-14">
+          <h1 className="select-none font-display text-7xl font-extrabold leading-[0.85] tracking-tighter text-white opacity-90">
+            WEL
+            <br />
+            COME.
+          </h1>
+          <p className="mt-8 max-w-[180px] text-[11px] font-medium uppercase leading-relaxed tracking-[0.2em] text-slate-400">
+            Business automation for the Tanzanian frontier
+          </p>
+        </div>
 
-        <div className="mt-8 space-y-3">
+        {/* Numbered entries */}
+        <div className="mb-6 mt-auto space-y-0">
           <button
             onClick={() => setMode("signup")}
-            className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-left backdrop-blur-2xl transition hover:border-amber-500/30 hover:bg-slate-900/90"
+            className="group flex w-full items-center gap-5 border-t border-white/10 py-6 text-left transition hover:border-amber-500/40"
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20">
-              <UserPlus className="h-5 w-5" />
-            </span>
+            <span className="font-display text-sm font-bold text-amber-500">01</span>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">Sign up</span>
-              <span className="block text-xs text-slate-400">Create your account</span>
+              <span className="block font-display text-xl font-bold tracking-tight text-white transition group-hover:text-amber-400">
+                Sign up
+              </span>
+              <span className="mt-0.5 block text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                Create your account
+              </span>
+            </span>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 text-white/60 transition group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-slate-950">
+              <ArrowUpRight className="h-4 w-4" />
             </span>
           </button>
           <button
             onClick={() => setMode("signin")}
-            className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-left backdrop-blur-2xl transition hover:border-white/20 hover:bg-slate-900/90"
+            className="group flex w-full items-center gap-5 border-y border-white/10 py-6 text-left transition hover:border-amber-500/40"
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 text-amber-500">
-              <LogIn className="h-5 w-5" />
-            </span>
+            <span className="font-display text-sm font-bold text-amber-500">02</span>
             <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">Sign in</span>
-              <span className="block text-xs text-slate-400">Welcome back</span>
+              <span className="block font-display text-xl font-bold tracking-tight text-white transition group-hover:text-amber-400">
+                Sign in
+              </span>
+              <span className="mt-0.5 block text-[11px] uppercase tracking-[0.18em] text-slate-500">
+                Welcome back
+              </span>
+            </span>
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 text-white/60 transition group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-slate-950">
+              <ArrowUpRight className="h-4 w-4" />
             </span>
           </button>
         </div>
 
-        <p className="mt-8 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-white/25">
-          Built for growing businesses
-        </p>
+        {/* Bottom meta */}
+        <div className="flex items-end justify-between opacity-40">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-white">02 / 02</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-white">Built for growth</span>
+        </div>
       </div>
 
       <AuthDrawer

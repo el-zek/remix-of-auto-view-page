@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ChevronsRight } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
-import bizzLogo from "@/assets/bizz-logo.png";
 
 export const WELCOME_SEEN_KEY = "bizz.welcome.seen";
 
@@ -20,7 +19,7 @@ export function WelcomeScreen({ onComplete }: { onComplete: () => void }) {
   useEffect(() => {
     const update = () => {
       const track = trackRef.current;
-      if (track) setSpan(Math.max(0, track.clientWidth - 56 - 8));
+      if (track) setSpan(Math.max(0, track.clientWidth - 80 - 24));
     };
     update();
     window.addEventListener("resize", update);
@@ -38,9 +37,9 @@ export function WelcomeScreen({ onComplete }: { onComplete: () => void }) {
     const track = trackRef.current;
     if (!track) return 0;
     const rect = track.getBoundingClientRect();
-    const handle = 56;
-    const span = Math.max(1, rect.width - handle - 8);
-    return Math.min(1, Math.max(0, (clientX - rect.left - handle / 2 - 4) / span));
+    const handle = 80;
+    const span = Math.max(1, rect.width - handle - 24);
+    return Math.min(1, Math.max(0, (clientX - rect.left - handle / 2 - 12) / span));
   };
 
   useEffect(() => {
@@ -84,59 +83,66 @@ export function WelcomeScreen({ onComplete }: { onComplete: () => void }) {
           transition: dragging ? "none" : "transform 520ms cubic-bezier(0.22,1,0.36,1)",
         }}
       />
-      {/* Slate gradient overlay */}
       <div
         aria-hidden
-        className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20"
+        className="absolute inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950"
+      />
+      {/* Amber flare */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-20 -top-20 h-64 w-64 rounded-full bg-amber-500/10 blur-[100px]"
       />
 
-      {/* Brand header */}
-      <div className="absolute inset-x-0 top-0 flex flex-col items-center pt-14">
-        <img src={bizzLogo} alt="Bizz Automators" className="h-9 w-auto opacity-95" />
-        <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.34em] text-white/40">
+      {/* Vertical brand rail — right edge */}
+      <div className="absolute right-6 top-1/2 flex -translate-y-1/2 flex-col items-center gap-6">
+        <div className="h-24 w-px bg-amber-500/20" />
+        <div className="flex rotate-90 items-center gap-4 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.5em] text-amber-500">
+          <span className="block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
           Bizz Automators
-        </p>
+        </div>
+        <div className="h-24 w-px bg-amber-500/20" />
       </div>
 
       {/* Content */}
-      <div className="relative flex h-full w-full items-end justify-center">
+      <div className="relative flex h-full w-full flex-col p-8">
         <div
-          className="flex w-full max-w-[430px] flex-col px-7"
+          className="mt-14"
           style={{
-            paddingBottom: "calc(2.25rem + env(safe-area-inset-bottom))",
             transform: `translate3d(0, ${-progress * 10}px, 0)`,
             transition: dragging ? "none" : "transform 520ms cubic-bezier(0.22,1,0.36,1)",
           }}
         >
-          <h1 className="font-display text-[2.6rem] font-bold leading-[1.05] tracking-[-0.02em] text-white">
-            Simplify your
+          <h1 className="select-none font-display text-7xl font-extrabold leading-[0.85] tracking-tighter text-white opacity-90">
+            SIMP
             <br />
-            business.
+            LIFY.
           </h1>
-          <p className="mt-4 max-w-[19rem] text-sm leading-relaxed text-slate-400">
-            Manage your business, customers and operations from one professional platform.
+          <p className="mt-8 max-w-[180px] text-[11px] font-medium uppercase leading-relaxed tracking-[0.2em] text-slate-400">
+            Business automation for the Tanzanian frontier
           </p>
+        </div>
 
-          {/* Swipe track */}
+        {/* Kinetic slide action */}
+        <div className="mb-6 mt-auto">
           <div
             ref={trackRef}
-            className="relative mt-10 h-16 w-full rounded-full border border-white/10 bg-slate-900/70 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.9)] backdrop-blur-2xl"
+            className="relative flex h-24 w-full items-center overflow-hidden rounded-3xl border border-white/10 bg-white/[0.03] px-3 backdrop-blur-2xl"
             style={{ touchAction: "none" }}
           >
+            {/* Progress fill */}
             <div
               aria-hidden
-              className="absolute inset-y-0 left-0 rounded-full"
+              className="absolute inset-y-0 left-0 rounded-3xl bg-amber-500/10"
               style={{
                 width: `${progress * 100}%`,
-                background: "linear-gradient(90deg, rgba(245,158,11,0.08), rgba(245,158,11,0.24))",
                 transition: dragging ? "none" : "width 420ms cubic-bezier(0.22,1,0.36,1)",
               }}
             />
             <span
-              className="pointer-events-none absolute inset-0 grid place-items-center text-sm font-medium tracking-wide text-white/60"
-              style={{ opacity: 1 - progress * 0.9 }}
+              className="pointer-events-none absolute left-1/2 -translate-x-1/2 text-[10px] font-bold uppercase tracking-[0.3em] text-white/40"
+              style={{ opacity: 1 - progress * 1.2 }}
             >
-              Slide to continue
+              Continue
             </span>
             <button
               type="button"
@@ -148,22 +154,24 @@ export function WelcomeScreen({ onComplete }: { onComplete: () => void }) {
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " " || e.key === "ArrowRight") finish();
               }}
-              className="absolute grid h-14 w-14 cursor-grab place-items-center rounded-full bg-amber-500 text-slate-950 active:cursor-grabbing"
+              className="absolute grid h-[72px] w-20 cursor-grab place-items-center rounded-2xl bg-amber-500 text-slate-950 active:cursor-grabbing"
               style={{
-                left: 4,
-                top: 4,
+                left: 12,
+                top: 12,
                 transform: `translate3d(${progress * span}px, 0, 0)`,
-                boxShadow: `0 8px 26px -8px rgba(245,158,11,${0.4 + progress * 0.45})`,
+                boxShadow: `0 0 30px rgba(245,158,11,${0.25 + progress * 0.35})`,
                 transition: dragging ? "none" : "transform 420ms cubic-bezier(0.22,1,0.36,1), box-shadow 300ms ease",
               }}
             >
-              <ArrowRight className="h-5 w-5" />
+              <ChevronsRight className="h-6 w-6" strokeWidth={2.5} />
             </button>
           </div>
+        </div>
 
-          <p className="mt-6 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-white/25">
-            Built for growing businesses
-          </p>
+        {/* Bottom meta */}
+        <div className="flex items-end justify-between opacity-40">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-white">01 / 02</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-white">Built for growth</span>
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, X, LogIn, UserPlus, KeyRound } from "lucide-react";
+import { Loader2, X, LogIn, UserPlus } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
 import bizzLogo from "@/assets/bizz-logo.png";
 import { WelcomeScreen, WELCOME_SEEN_KEY } from "@/components/auth/welcome-screen";

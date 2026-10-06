@@ -2,9 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, X, ArrowUpRight } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
-import { WelcomeScreen, WELCOME_SEEN_KEY } from "@/components/auth/welcome-screen";
 import { Celebration } from "@/components/auth/celebration";
 
 import { BusinessProfileStep } from "@/components/auth/signup-scope-steps";
@@ -35,7 +34,7 @@ const inputCls =
 const labelCls =
   "ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500";
 
-type Mode = "signin" | "signup" | "forgot" | null;
+type Mode = "signin" | "signup" | "forgot";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -46,78 +45,9 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function AuthDrawer({
-  open,
-  onClose,
-  title,
-  subtitle,
-  children,
-}: {
-  open: boolean;
-  onClose: () => void;
-  title: string;
-  subtitle: string;
-  children: ReactNode;
-}) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [open, onClose]);
-
-  return (
-    <div
-      className={`fixed inset-0 z-[100] transition ${open ? "pointer-events-auto" : "pointer-events-none"}`}
-      aria-hidden={!open}
-    >
-      <div
-        onClick={onClose}
-        className={`absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity ${open ? "opacity-100" : "opacity-0"}`}
-      />
-      <div className="absolute inset-x-0 bottom-0 flex justify-center px-3 pb-3 sm:inset-0 sm:items-center sm:p-6">
-        <div
-          className={`flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-900/80 text-white shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-out ${
-            open
-              ? "translate-y-0 sm:scale-100 sm:opacity-100"
-              : "translate-y-full sm:translate-y-6 sm:scale-95 sm:opacity-0"
-          }`}
-          role="dialog"
-          aria-modal="true"
-          aria-label={title}
-        >
-          {/* Handle */}
-          <div className="mx-auto mt-4 h-1 w-12 shrink-0 rounded-full bg-white/10" />
-
-          <div className="flex items-start justify-between px-8 pt-6">
-            <div>
-              <h2 className="font-display text-2xl font-bold tracking-tight text-white">{title}</h2>
-              <p className="mt-1 text-xs text-slate-400">{subtitle}</p>
-            </div>
-            <button
-              onClick={onClose}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white/60 transition hover:bg-white/10 hover:text-white"
-              aria-label="Close"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-
-          <div
-            className="min-h-0 flex-1 overflow-y-auto px-8 pb-8 pt-6"
-            style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}
-          >
-            {children}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>(null);
+  const [mode, setMode] = useState<Mode>("signin");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -128,8 +58,6 @@ function AuthPage() {
   });
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [revealed, setRevealed] = useState(true);
   const [celebrate, setCelebrate] = useState(false);
   const celebratingRef = useRef(false);
   const hasSessionRef = useRef(false);
@@ -139,11 +67,6 @@ function AuthPage() {
       if (data.session) {
         navigate({ to: "/dashboard", replace: true });
         return;
-      }
-      // First launch only: returning users go straight to sign in.
-      if (window.localStorage.getItem(WELCOME_SEEN_KEY) !== "1") {
-        setShowWelcome(true);
-        setRevealed(false);
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -209,7 +132,6 @@ function AuthPage() {
           if (logoError) throw logoError;
         }
         hasSessionRef.current = Boolean(data.session);
-        setMode(null);
         setSignupStep(1);
         setCelebrate(true);
       } else if (mode === "forgot") {
@@ -237,6 +159,9 @@ function AuthPage() {
 
   const primaryBtn =
     "flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-4 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/10 transition hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60";
+
+  const headline =
+    mode === "signin" ? ["SIGN", "IN."] : mode === "signup" ? ["JOIN", "NOW."] : ["RESET", "ACCESS."];
 
   const form = (
     <>
@@ -403,6 +328,7 @@ function AuthPage() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
+      {/* The old welcome scene — now purely a backdrop */}
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 bg-cover bg-center opacity-40 grayscale"
@@ -428,88 +354,28 @@ function AuthPage() {
         <div className="h-24 w-px bg-amber-500/20" />
       </div>
 
-      <div
-        className="relative flex min-h-screen w-full max-w-[430px] flex-col p-8"
-        style={{
-          transform: revealed ? "translate3d(0,0,0)" : "translate3d(0, 24px, 0)",
-          opacity: revealed ? 1 : 0,
-          transition: "transform 620ms cubic-bezier(0.22,1,0.36,1), opacity 520ms ease",
-        }}
-      >
-        <div className="mt-14">
-          <h1 className="select-none font-display text-7xl font-extrabold leading-[0.85] tracking-tighter text-white opacity-90">
-            WEL
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[430px] flex-col p-8">
+        <div className="mt-10 shrink-0">
+          <h1 className="select-none font-display text-6xl font-extrabold leading-[0.85] tracking-tighter text-white opacity-90">
+            {headline[0]}
             <br />
-            COME.
+            {headline[1]}
           </h1>
-          <p className="mt-8 max-w-[180px] text-[11px] font-medium uppercase leading-relaxed tracking-[0.2em] text-slate-400">
+          <p className="mt-6 max-w-[200px] text-[11px] font-medium uppercase leading-relaxed tracking-[0.2em] text-slate-400">
             Business automation for the Tanzanian frontier
           </p>
         </div>
 
-        {/* Numbered entries */}
-        <div className="mb-6 mt-auto space-y-0">
-          <button
-            onClick={() => setMode("signup")}
-            className="group flex w-full items-center gap-5 border-t border-white/10 py-6 text-left transition hover:border-amber-500/40"
-          >
-            <span className="font-display text-sm font-bold text-amber-500">01</span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-xl font-bold tracking-tight text-white transition group-hover:text-amber-400">
-                Sign up
-              </span>
-              <span className="mt-0.5 block text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                Create your account
-              </span>
-            </span>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 text-white/60 transition group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-slate-950">
-              <ArrowUpRight className="h-4 w-4" />
-            </span>
-          </button>
-          <button
-            onClick={() => setMode("signin")}
-            className="group flex w-full items-center gap-5 border-y border-white/10 py-6 text-left transition hover:border-amber-500/40"
-          >
-            <span className="font-display text-sm font-bold text-amber-500">02</span>
-            <span className="min-w-0 flex-1">
-              <span className="block font-display text-xl font-bold tracking-tight text-white transition group-hover:text-amber-400">
-                Sign in
-              </span>
-              <span className="mt-0.5 block text-[11px] uppercase tracking-[0.18em] text-slate-500">
-                Welcome back
-              </span>
-            </span>
-            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-white/10 text-white/60 transition group-hover:border-amber-500 group-hover:bg-amber-500 group-hover:text-slate-950">
-              <ArrowUpRight className="h-4 w-4" />
-            </span>
-          </button>
+        {/* Auth card — the entry point itself */}
+        <div className="mb-8 mt-auto rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl">
+          {form}
         </div>
 
-        {/* Bottom meta */}
-        <div className="flex items-end justify-between opacity-40">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-white">02 / 02</span>
+        <div className="flex items-end justify-between pb-2 opacity-40">
           <span className="text-[9px] font-bold uppercase tracking-widest text-white">Built for growth</span>
+          <span className="text-[9px] font-bold uppercase tracking-widest text-white">Bizz Automators</span>
         </div>
       </div>
-
-      <AuthDrawer
-        open={mode !== null}
-        onClose={() => setMode(null)}
-        title={mode === "signup" ? "Create account" : mode === "forgot" ? "Reset password" : "Sign in"}
-        subtitle={mode === "signup" ? "Set up your business workspace" : mode === "forgot" ? "Verify with your full name and phone number" : "Welcome back to your workspace"}
-      >
-        {form}
-      </AuthDrawer>
-
-      {showWelcome && (
-        <WelcomeScreen
-          onComplete={() => {
-            window.localStorage.setItem(WELCOME_SEEN_KEY, "1");
-            setShowWelcome(false);
-            setRevealed(true);
-          }}
-        />
-      )}
 
       {celebrate && (
         <Celebration

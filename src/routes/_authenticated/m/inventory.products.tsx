@@ -1,0 +1,305 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useRef, useState } from "react";
+import { Package, Plus } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { useInventory, formatMoney, stockStatus, type ProductRecord } from "@/components/inventory/inventory-provider";
+import { RecordDialog, ConfirmDialog, num, str, type FieldValue } from "@/components/tax/record-dialog";
+import { DetailsDrawer, StatusBadge, SummaryStrip, TaxTable, TaxWorkspace, exportCsv } from "@/components/tax/tax-workspace";
+import { ProductImagePicker, ProductThumb, uploadProductImage, useProductImageUrl, productPlaceholder } from "@/components/inventory/product-image";
+import { useBusinessProfile } from "@/hooks/use-business-profile";
+import { generateSku } from "@/lib/product-sku";
+
+function ProductPhoto({ path }: { path?: string }) {
+  const url = useProductImageUrl(path);
+  return <img src={url ?? productPlaceholder} alt="Product photo" className="max-h-28 rounded-xl object-contain" />;
+}
+
+export const Route = createFileRoute("/_authenticated/m/inventory/products")({ component: ProductsPage });
+
+
+function ProductsPage() {
+  const { products, categories, purchases, purchaseItems, saveProduct, saveCategory, deleteProduct, metrics } = useInventory();
+  const business = useBusinessProfile();
+  const [editing, setEditing] = useState<ProductRecord | null>(null);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formSeed, setFormSeed] = useState<Record<string, FieldValue> | null>(null);
+  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
+  const [justAddedCategories, setJustAddedCategories] = useState<string[]>([]);
+  const liveValues = useRef<Record<string, FieldValue>>({});
+  const [photo, setPhoto] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [detail, setDetail] = useState<ProductRecord | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<ProductRecord | null>(null);
+
+  const categoryNames = Array.from(new Set([...categories.map((row) => row.name), ...justAddedCategories]));
+
+  const openCreate = () => { setEditing(null); setPhoto(""); setFormSeed({ reorderLevel: 5, stockQuantity: 0, costPrice: 0 }); setFormOpen(true); };
+  const openEdit = (row: ProductRecord) => {
+    setEditing(row);
+    setPhoto("");
+    setFormSeed({
+      name: row.name,
+      category: row.category || (categoryNames[0] ?? ""),
+      sellingPrice: row.sellingPrice,
+      reorderLevel: row.reorderLevel,
+      description: row.description,
+    });
+    setFormOpen(true);
+  };
+
+
+  /** Purchase history for a product — this is where supplier and historical cost live. */
+  const historyOf = (product: ProductRecord) =>
+    purchaseItems
+      .filter((item) => item.productId === product.id)
+      .map((item) => ({ item, purchase: purchases.find((row) => row.id === item.purchaseId) }))
+      .sort((a, b) => (b.purchase?.purchaseDate ?? "").localeCompare(a.purchase?.purchaseDate ?? ""));
+
+  const supplierList = (product: ProductRecord) => {
+    const names = Array.from(new Set(historyOf(product).map((row) => row.purchase?.supplierName).filter(Boolean)));
+    return names.length ? names.join(", ") : "—";
+  };
+
+  /**
+   * Photo + name identify the product. The SKU is generated here on save and is
+   * never typed by the user; barcodes are kept only for products that already had one.
+   */
+  const submit = (value: Record<string, FieldValue>) => {
+    if (saving) return;
+    setSaving(true);
+    void (async () => {
+      try {
+        const categoryName = str(value.category);
+        const name = str(value.name);
+        const imagePath = photo ? await uploadProductImage(photo) : editing?.imagePath;
+        const sku = editing?.sku || generateSku(business.name, name, products.map((row) => row.sku));
+
+        saveProduct(
+          {
+            name,
+            sku,
+            barcode: editing?.barcode ?? "",
+            category: categoryName,
+            categoryId: categories.find((row) => row.name === categoryName)?.id ?? "",
+            // Suppliers belong to purchases, not to the product master record.
+            supplierId: editing?.supplierId ?? "",
+            warehouseId: editing?.warehouseId ?? "",
+            sellingPrice: num(value.sellingPrice),
+            costPrice: editing ? editing.costPrice : num(value.costPrice),
+            stockQuantity: editing?.stockQuantity ?? num(value.stockQuantity),
+            reorderLevel: num(value.reorderLevel),
+            active: editing?.active ?? true,
+            description: str(value.description),
+            imagePath: imagePath ?? "",
+          },
+          editing?.id,
+        );
+        toast.success(editing ? "Product updated" : `Product added · SKU ${sku}`);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Could not save the product photo");
+      } finally {
+        setSaving(false);
+      }
+    })();
+  };
+
+
+
+
+  return (
+    <TaxWorkspace
+      title="Products"
+      subtitle="Catalogue, pricing and stock levels"
+      icon={Package}
+      backTo="/m/inventory"
+      backLabel="Back to Inventory"
+      actions={
+        <Button size="sm" className="h-9 bg-amber-400 text-black hover:bg-amber-300" onClick={openCreate}>
+          <Plus className="mr-1.5 h-4 w-4" /> New product
+        </Button>
+      }
+    >
+      <SummaryStrip
+        items={[
+          { label: "Products", value: String(metrics.totalProducts), accent: true },
+          { label: "Stock Value", value: formatMoney(metrics.stockValue) },
+
+        ]}
+      />
+
+      <TaxTable
+        rows={products}
+        searchKeys={(row) => `${row.name} ${row.sku} ${row.barcode} ${row.category}`}
+        filter={{
+          label: "Status",
+          options: [
+            { value: "In Stock", label: "In Stock" },
+            { value: "Low Stock", label: "Low Stock" },
+            { value: "Out of Stock", label: "Out of Stock" },
+            { value: "Archived", label: "Archived" },
+          ],
+          match: (row, value) => (value === "Archived" ? !row.active : row.active && stockStatus(row) === value),
+        }}
+        columns={[
+          {
+            key: "name",
+            label: "Product",
+            render: (row) => (
+              <span className="flex items-center gap-2">
+                <ProductThumb path={row.imagePath} alt={row.name} className="h-9 w-9 shrink-0 rounded-lg border border-white/10" />
+                <span className="font-medium text-white">{row.name}{row.active ? "" : " (archived)"}</span>
+              </span>
+            ),
+          },
+          { key: "sku", label: "SKU", hideOnMobile: true, render: (row) => row.sku || "—" },
+          { key: "category", label: "Category", hideOnMobile: true, render: (row) => row.category || "—" },
+          { key: "sellingPrice", label: "Selling price", render: (row) => formatMoney(row.sellingPrice) },
+          { key: "stockQuantity", label: "Stock", render: (row) => String(row.stockQuantity) },
+        ]}
+
+        onRowClick={setDetail}
+        onEdit={openEdit}
+        onDelete={setPendingDelete}
+        onExport={(rows) =>
+          exportCsv(
+            "products.csv",
+            ["Product", "SKU", "Barcode", "Category", "Selling price", "Inventory cost", "Stock"],
+            rows.map((row) => [row.name, row.sku, row.barcode, row.category, row.sellingPrice, row.costPrice, row.stockQuantity]),
+          )
+        }
+        addLabel="New product"
+        onAdd={openCreate}
+        empty={{ title: "No products yet", description: "A product is what you buy and sell. Adding one does not create stock — stock comes from purchases.", icon: Package }}
+      />
+
+      <RecordDialog
+        open={formOpen}
+        title={editing ? "Edit product" : "New product"}
+        description="The master record of what you buy and sell. Suppliers and purchase costs are recorded on purchases, not here."
+        submitLabel={editing ? "Update" : "Create"}
+        initialValue={formSeed}
+        onClose={() => setFormOpen(false)}
+        onChange={(values) => { liveValues.current = values; }}
+        onSubmit={submit}
+        blockSubmit={!editing && !photo ? "Add a product photo — every new product needs one." : null}
+        fields={[
+          { name: "name", label: "Product name", type: "text", required: true, half: true },
+          {
+            name: "category",
+            label: "Category",
+            type: "select",
+            options: categoryNames.length ? categoryNames : ["Uncategorised"],
+            half: true,
+            action: { label: "+ New category", onClick: () => setCategoryFormOpen(true) },
+          },
+          { name: "sellingPrice", label: "Selling price (current)", type: "number", required: true, half: true },
+          { name: "reorderLevel", label: "Reorder level", type: "number", half: true },
+          ...(editing
+            ? []
+            : ([
+                { name: "stockQuantity", label: "Opening stock (optional)", type: "number", half: true },
+                { name: "costPrice", label: "Opening cost per unit", type: "number", half: true },
+              ] as const)),
+          { name: "description", label: "Description", type: "text" },
+        ]}
+        extra={
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-white/80">Product photo {editing ? "" : "(required)"}</p>
+            <ProductImagePicker
+              value={photo}
+              existingPath={editing?.imagePath}
+              onChange={setPhoto}
+              invalid={!editing && !photo}
+            />
+            <p className="text-[11px] text-white/45">
+              A product is identified by its photo and name. The product code (SKU) is created automatically when you save.
+            </p>
+            <p className="text-[11px] text-white/45">
+              {editing
+                ? "Inventory cost is maintained automatically from received purchases. Changing the selling price never changes past sales."
+                : "Leave opening stock at 0 if you have no goods yet — stock arrives when you receive a purchase."}
+            </p>
+          </div>
+        }
+
+      />
+
+      <RecordDialog
+        open={categoryFormOpen}
+        title="New category"
+        description="Add the category now and continue with this product."
+        submitLabel="Add category"
+        initialValue={null}
+        onClose={() => setCategoryFormOpen(false)}
+        onSubmit={(value) => {
+          const name = str(value.name).trim();
+          if (!name) return;
+          saveCategory({ name, description: str(value.description) });
+          setJustAddedCategories((current) => [name, ...current]);
+          setFormSeed({ ...liveValues.current, category: name });
+          toast.success(`${name} added — selected on this product`);
+        }}
+        fields={[
+          { name: "name", label: "Category name", type: "text", required: true, half: true },
+          { name: "description", label: "Description", type: "text", half: true },
+        ]}
+      />
+
+      <DetailsDrawer
+        open={Boolean(detail)}
+        onClose={() => setDetail(null)}
+        title={detail?.name ?? ""}
+        description="Product details"
+        rows={
+          detail
+            ? [
+                { label: "Photo", value: <ProductPhoto path={detail.imagePath} /> },
+                { label: "SKU", value: detail.sku || "—" },
+                { label: "Barcode", value: detail.barcode || "—" },
+                { label: "Category", value: detail.category || "—" },
+                { label: "Bought from", value: supplierList(detail) },
+                { label: "Selling price (current)", value: formatMoney(detail.sellingPrice) },
+                { label: "Inventory cost / unit", value: formatMoney(detail.costPrice) },
+                { label: "Stock on hand", value: String(detail.stockQuantity) },
+                { label: "Stock value", value: formatMoney(detail.stockQuantity * detail.costPrice) },
+                { label: "Reorder level", value: String(detail.reorderLevel) },
+                { label: "Status", value: <StatusBadge value={detail.active ? stockStatus(detail) : "Archived"} /> },
+                {
+                  label: "Purchase history",
+                  value: (
+                    <div className="space-y-1">
+                      {historyOf(detail).slice(0, 6).map(({ item, purchase }) => (
+                        <div key={item.id} className="text-xs text-white/80">
+                          {purchase?.purchaseDate ?? "—"} · {purchase?.supplierName || "—"} · {item.quantity} × {formatMoney(item.unitCost)}
+                        </div>
+                      ))}
+                      {historyOf(detail).length === 0 ? <span className="text-white/50">Not purchased yet</span> : null}
+                    </div>
+                  ),
+                },
+                { label: "Description", value: detail.description || "—" },
+              ]
+            : []
+        }
+        footer={
+          detail ? (
+            <>
+              <Button variant="outline" className="border-white/15 bg-white/5 text-white hover:bg-white/15" onClick={() => { openEdit(detail); setDetail(null); }}>Edit</Button>
+              <Button className="bg-rose-500 text-white hover:bg-rose-400" onClick={() => { setPendingDelete(detail); setDetail(null); }}>Delete</Button>
+            </>
+          ) : null
+        }
+      />
+
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title="Delete product"
+        description={`${pendingDelete?.name ?? ""} will be deleted. If it already appears on purchases, sales or stock movements it is archived instead, so history stays readable.`}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => { if (pendingDelete) { deleteProduct(pendingDelete.id); toast.success("Product removed or archived"); } }}
+      />
+
+    </TaxWorkspace>
+  );
+}

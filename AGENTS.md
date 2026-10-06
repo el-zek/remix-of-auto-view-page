@@ -9,4 +9,4 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep the automobile showcase as a single route with presentation-only content because the requested experience is intentionally simple and static.
+- Keep sales PDF item layout in the shared renderer, fitting photos proportionally and paginating full specifications so preview and export stay identical.

@@ -2,9 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
+import { ArrowUpRight, Loader2, X } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
+import bizzLogo from "@/assets/bizz-logo.png";
 import { Celebration } from "@/components/auth/celebration";
+import { Button } from "@/components/ui/button";
+import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 
 import { BusinessProfileStep } from "@/components/auth/signup-scope-steps";
 import { savePendingScope } from "@/lib/onboarding-scope";
@@ -159,15 +162,6 @@ function AuthPage() {
 
   const primaryBtn =
     "flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-4 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/10 transition hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60";
-
-  const headline =
-    mode === "choice"
-      ? ["WELCOME", "."]
-      : mode === "signin"
-        ? ["SIGN", "IN."]
-        : mode === "signup"
-          ? ["JOIN", "NOW."]
-          : ["RESET", "ACCESS."];
 
   const chooseAuth = (nextMode: "signin" | "signup") => {
     setMode(nextMode);
@@ -368,23 +362,22 @@ function AuthPage() {
 
       <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[430px] flex-col p-8">
         <div className="mt-10 shrink-0">
-          <h1 className="select-none font-display text-6xl font-extrabold leading-[0.85] tracking-tighter text-white opacity-90">
-            {headline[0]}
-            <br />
-            {headline[1]}
-          </h1>
-          <p className="mt-6 max-w-[200px] text-[11px] font-medium uppercase leading-relaxed tracking-[0.2em] text-slate-400">
-            Business automation for the Tanzanian frontier
+          <img
+            src={bizzLogo}
+            alt="Bizz Automators"
+            className="h-auto w-44 object-contain object-left drop-shadow-2xl"
+          />
+          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+            Simplify your business
           </p>
         </div>
 
-        <div className="mb-8 mt-auto">
-          {mode === "choice" ? (
-            <div className="space-y-3" aria-label="Choose how to continue">
-              <button
+        <div className="mb-8 mt-auto space-y-3" aria-label="Choose how to continue">
+              <Button
                 type="button"
                 onClick={() => chooseAuth("signup")}
-                className="group flex min-h-24 w-full items-center border-y border-white/15 bg-white/[0.035] px-5 text-left backdrop-blur-xl transition hover:bg-white/[0.08]"
+                variant="ghost"
+                className="group flex h-auto min-h-24 w-full items-center justify-start rounded-none border-y border-white/15 bg-white/[0.035] px-5 text-left backdrop-blur-xl transition hover:bg-white/[0.08] hover:text-white"
               >
                 <span className="mr-5 self-start pt-6 text-[10px] font-bold tracking-[0.22em] text-amber-500">01</span>
                 <span className="flex flex-1 items-center justify-between py-5">
@@ -396,12 +389,13 @@ function AuthPage() {
                     <ArrowUpRight className="h-5 w-5" aria-hidden />
                   </span>
                 </span>
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 onClick={() => chooseAuth("signin")}
-                className="group flex min-h-24 w-full items-center border-b border-white/15 bg-white/[0.035] px-5 text-left backdrop-blur-xl transition hover:bg-white/[0.08]"
+                variant="ghost"
+                className="group flex h-auto min-h-24 w-full items-center justify-start rounded-none border-b border-white/15 bg-white/[0.035] px-5 text-left backdrop-blur-xl transition hover:bg-white/[0.08] hover:text-white"
               >
                 <span className="mr-5 self-start pt-6 text-[10px] font-bold tracking-[0.22em] text-amber-500">02</span>
                 <span className="flex flex-1 items-center justify-between py-5">
@@ -413,25 +407,7 @@ function AuthPage() {
                     <ArrowUpRight className="h-5 w-5" aria-hidden />
                   </span>
                 </span>
-              </button>
-            </div>
-          ) : (
-            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode("choice");
-                  setSignupStep(1);
-                  setPassword("");
-                }}
-                className="mb-5 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 transition hover:text-amber-500"
-              >
-                <ArrowLeft className="h-4 w-4" aria-hidden />
-                Back
-              </button>
-              {form}
-            </div>
-          )}
+              </Button>
         </div>
 
         <div className="flex items-end justify-between pb-2 opacity-40">
@@ -439,6 +415,45 @@ function AuthPage() {
           <span className="text-[9px] font-bold uppercase tracking-widest text-white">Bizz Automators</span>
         </div>
       </div>
+
+      <Drawer
+        open={mode !== "choice"}
+        onOpenChange={(open) => {
+          if (!open) {
+            setMode("choice");
+            setSignupStep(1);
+            setPassword("");
+          }
+        }}
+        shouldScaleBackground={false}
+      >
+        <DrawerContent className="!bottom-0 !left-1/2 !top-auto max-h-[88dvh] !w-full max-w-[430px] !translate-x-[-50%] !translate-y-0 overflow-y-auto rounded-b-none rounded-t-[2.5rem] border-white/10 bg-slate-950/90 px-6 pb-8 pt-5 text-white shadow-2xl shadow-black/60 backdrop-blur-2xl">
+          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/15" aria-hidden />
+          <div className="mb-6 flex items-start justify-between gap-5">
+            <div>
+              <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.28em] text-amber-500">Bizz Automators</p>
+              <DrawerTitle className="font-display text-3xl font-extrabold text-white">
+                {mode === "signup" ? "Create account" : mode === "forgot" ? "Reset access" : "Welcome back"}
+              </DrawerTitle>
+              <p className="mt-2 text-xs text-slate-400">
+                {mode === "signup" ? "Set up your business workspace." : mode === "forgot" ? "Restore access to your workspace." : "Sign in to continue to your workspace."}
+              </p>
+            </div>
+            <DrawerClose asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Close"
+                className="h-11 w-11 shrink-0 rounded-full border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
+              >
+                <X className="h-5 w-5" aria-hidden />
+              </Button>
+            </DrawerClose>
+          </div>
+          {form}
+        </DrawerContent>
+      </Drawer>
 
       {celebrate && (
         <Celebration

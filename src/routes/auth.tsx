@@ -2,12 +2,11 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowUpRight, Loader2, X } from "lucide-react";
+import { Loader2, X, LogIn, UserPlus } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
 import bizzLogo from "@/assets/bizz-logo.png";
+import { WelcomeScreen, WELCOME_SEEN_KEY } from "@/components/auth/welcome-screen";
 import { Celebration } from "@/components/auth/celebration";
-import { Button } from "@/components/ui/button";
-import { Drawer, DrawerClose, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 
 import { BusinessProfileStep } from "@/components/auth/signup-scope-steps";
 import { savePendingScope } from "@/lib/onboarding-scope";
@@ -37,7 +36,7 @@ const inputCls =
 const labelCls =
   "ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500";
 
-type Mode = "choice" | "signin" | "signup" | "forgot";
+type Mode = "signin" | "signup" | "forgot" | null;
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -48,9 +47,78 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+function AuthDrawer({
+  open,
+  onClose,
+  title,
+  subtitle,
+  children,
+}: {
+  open: boolean;
+  onClose: () => void;
+  title: string;
+  subtitle: string;
+  children: ReactNode;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
+  return (
+    <div
+      className={`fixed inset-0 z-[100] transition ${open ? "pointer-events-auto" : "pointer-events-none"}`}
+      aria-hidden={!open}
+    >
+      <div
+        onClick={onClose}
+        className={`absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity ${open ? "opacity-100" : "opacity-0"}`}
+      />
+      <div className="absolute inset-x-0 bottom-0 flex justify-center px-3 pb-3 sm:inset-0 sm:items-center sm:p-6">
+        <div
+          className={`flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-900/80 text-white shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-out ${
+            open
+              ? "translate-y-0 sm:scale-100 sm:opacity-100"
+              : "translate-y-full sm:translate-y-6 sm:scale-95 sm:opacity-0"
+          }`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
+        >
+          {/* Handle */}
+          <div className="mx-auto mt-4 h-1 w-12 shrink-0 rounded-full bg-white/10" />
+
+          <div className="flex items-start justify-between px-8 pt-6">
+            <div>
+              <h2 className="font-display text-2xl font-bold tracking-tight text-white">{title}</h2>
+              <p className="mt-1 text-xs text-slate-400">{subtitle}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white/60 transition hover:bg-white/10 hover:text-white"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div
+            className="min-h-0 flex-1 overflow-y-auto px-8 pb-8 pt-6"
+            style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}
+          >
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>("choice");
+  const [mode, setMode] = useState<Mode>(null);
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -61,6 +129,8 @@ function AuthPage() {
   });
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
+  const [revealed, setRevealed] = useState(true);
   const [celebrate, setCelebrate] = useState(false);
   const celebratingRef = useRef(false);
   const hasSessionRef = useRef(false);
@@ -70,6 +140,11 @@ function AuthPage() {
       if (data.session) {
         navigate({ to: "/dashboard", replace: true });
         return;
+      }
+      // First launch only: returning users go straight to sign in.
+      if (window.localStorage.getItem(WELCOME_SEEN_KEY) !== "1") {
+        setShowWelcome(true);
+        setRevealed(false);
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -135,6 +210,7 @@ function AuthPage() {
           if (logoError) throw logoError;
         }
         hasSessionRef.current = Boolean(data.session);
+        setMode(null);
         setSignupStep(1);
         setCelebrate(true);
       } else if (mode === "forgot") {
@@ -162,12 +238,6 @@ function AuthPage() {
 
   const primaryBtn =
     "flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-4 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/10 transition hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60";
-
-  const chooseAuth = (nextMode: "signin" | "signup") => {
-    setMode(nextMode);
-    setSignupStep(1);
-    setPassword("");
-  };
 
   const form = (
     <>
@@ -333,8 +403,11 @@ function AuthPage() {
   );
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
-      {/* The old welcome scene — now purely a backdrop */}
+    <main className="relative grid min-h-screen place-items-end justify-center overflow-hidden px-5 text-white sm:place-items-center">
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 bg-slate-950"
+      />
       <div
         aria-hidden
         className="pointer-events-none fixed inset-0 bg-cover bg-center opacity-40 grayscale"
@@ -342,118 +415,82 @@ function AuthPage() {
       />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 bg-gradient-to-b from-slate-950 via-transparent to-slate-950"
+        className="pointer-events-none fixed inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20"
       />
-      {/* Amber flare */}
+
       <div
-        aria-hidden
-        className="pointer-events-none fixed -left-20 -top-20 h-64 w-64 rounded-full bg-amber-500/10 blur-[100px]"
-      />
-
-      {/* Vertical brand rail — right edge */}
-      <div className="absolute right-6 top-1/2 z-10 flex -translate-y-1/2 flex-col items-center gap-6">
-        <div className="h-24 w-px bg-amber-500/20" />
-        <div className="flex rotate-90 items-center gap-4 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.5em] text-amber-500">
-          <span className="block h-2 w-2 animate-pulse rounded-full bg-amber-500" />
-          Bizz Automators
-        </div>
-        <div className="h-24 w-px bg-amber-500/20" />
-      </div>
-
-      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-[430px] flex-col p-8">
-        <div className="mt-10 shrink-0">
-          <img
-            src={bizzLogo}
-            alt="Bizz Automators"
-            className="h-auto w-44 object-contain object-left drop-shadow-2xl"
-          />
-          <p className="mt-5 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
-            Simplify your business
-          </p>
-        </div>
-
-        <div className="mb-8 mt-auto space-y-3" aria-label="Choose how to continue">
-              <Button
-                type="button"
-                onClick={() => chooseAuth("signup")}
-                variant="ghost"
-                className="group flex h-auto min-h-24 w-full items-center justify-start rounded-none border-y border-white/15 bg-white/[0.035] px-5 text-left backdrop-blur-xl transition hover:bg-white/[0.08] hover:text-white"
-              >
-                <span className="mr-5 self-start pt-6 text-[10px] font-bold tracking-[0.22em] text-amber-500">01</span>
-                <span className="flex flex-1 items-center justify-between py-5">
-                  <span>
-                    <span className="block text-2xl font-bold text-white">Sign up</span>
-                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Create a business account</span>
-                  </span>
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 text-amber-500 transition group-hover:border-amber-500/50 group-hover:bg-amber-500 group-hover:text-slate-950">
-                    <ArrowUpRight className="h-5 w-5" aria-hidden />
-                  </span>
-                </span>
-              </Button>
-
-              <Button
-                type="button"
-                onClick={() => chooseAuth("signin")}
-                variant="ghost"
-                className="group flex h-auto min-h-24 w-full items-center justify-start rounded-none border-b border-white/15 bg-white/[0.035] px-5 text-left backdrop-blur-xl transition hover:bg-white/[0.08] hover:text-white"
-              >
-                <span className="mr-5 self-start pt-6 text-[10px] font-bold tracking-[0.22em] text-amber-500">02</span>
-                <span className="flex flex-1 items-center justify-between py-5">
-                  <span>
-                    <span className="block text-2xl font-bold text-white">Sign in</span>
-                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Continue to your workspace</span>
-                  </span>
-                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 text-amber-500 transition group-hover:border-amber-500/50 group-hover:bg-amber-500 group-hover:text-slate-950">
-                    <ArrowUpRight className="h-5 w-5" aria-hidden />
-                  </span>
-                </span>
-              </Button>
-        </div>
-
-        <div className="flex items-end justify-between pb-2 opacity-40">
-          <span className="text-[9px] font-bold uppercase tracking-widest text-white">Built for growth</span>
-          <span className="text-[9px] font-bold uppercase tracking-widest text-white">Bizz Automators</span>
-        </div>
-      </div>
-
-      <Drawer
-        open={mode !== "choice"}
-        onOpenChange={(open) => {
-          if (!open) {
-            setMode("choice");
-            setSignupStep(1);
-            setPassword("");
-          }
+        className="relative w-full max-w-[430px]"
+        style={{
+          paddingBottom: "calc(2.25rem + env(safe-area-inset-bottom))",
+          paddingTop: "2rem",
+          transform: revealed ? "translate3d(0,0,0)" : "translate3d(0, 24px, 0)",
+          opacity: revealed ? 1 : 0,
+          transition: "transform 620ms cubic-bezier(0.22,1,0.36,1), opacity 520ms ease",
         }}
-        shouldScaleBackground={false}
       >
-        <DrawerContent className="!bottom-0 !left-1/2 !top-auto max-h-[88dvh] !w-full max-w-[430px] !translate-x-[-50%] !translate-y-0 overflow-y-auto rounded-b-none rounded-t-[2.5rem] border-white/10 bg-slate-950/90 px-6 pb-8 pt-5 text-white shadow-2xl shadow-black/60 backdrop-blur-2xl">
-          <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/15" aria-hidden />
-          <div className="mb-6 flex items-start justify-between gap-5">
-            <div>
-              <p className="mb-2 text-[9px] font-bold uppercase tracking-[0.28em] text-amber-500">Bizz Automators</p>
-              <DrawerTitle className="font-display text-3xl font-extrabold text-white">
-                {mode === "signup" ? "Create account" : mode === "forgot" ? "Reset access" : "Welcome back"}
-              </DrawerTitle>
-              <p className="mt-2 text-xs text-slate-400">
-                {mode === "signup" ? "Set up your business workspace." : mode === "forgot" ? "Restore access to your workspace." : "Sign in to continue to your workspace."}
-              </p>
-            </div>
-            <DrawerClose asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="Close"
-                className="h-11 w-11 shrink-0 rounded-full border border-white/10 bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white"
-              >
-                <X className="h-5 w-5" aria-hidden />
-              </Button>
-            </DrawerClose>
-          </div>
-          {form}
-        </DrawerContent>
-      </Drawer>
+        <img
+          src={bizzLogo}
+          alt="Bizz Automators"
+          className="h-10 w-auto opacity-95"
+        />
+        <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.34em] text-white/40">
+          Bizz Automators
+        </p>
+        <h1 className="mt-6 font-display text-4xl font-bold leading-tight tracking-[-0.02em] text-white">
+          Welcome
+        </h1>
+        <p className="mt-2 text-sm text-slate-400">Simplify your business.</p>
+
+        <div className="mt-8 space-y-3">
+          <button
+            onClick={() => setMode("signup")}
+            className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-left backdrop-blur-2xl transition hover:border-amber-500/30 hover:bg-slate-900/90"
+          >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20">
+              <UserPlus className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Sign up</span>
+              <span className="block text-xs text-slate-400">Create your account</span>
+            </span>
+          </button>
+          <button
+            onClick={() => setMode("signin")}
+            className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-left backdrop-blur-2xl transition hover:border-white/20 hover:bg-slate-900/90"
+          >
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 text-amber-500">
+              <LogIn className="h-5 w-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-semibold">Sign in</span>
+              <span className="block text-xs text-slate-400">Welcome back</span>
+            </span>
+          </button>
+        </div>
+
+        <p className="mt-8 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-white/25">
+          Built for growing businesses
+        </p>
+      </div>
+
+      <AuthDrawer
+        open={mode !== null}
+        onClose={() => setMode(null)}
+        title={mode === "signup" ? "Create account" : mode === "forgot" ? "Reset password" : "Sign in"}
+        subtitle={mode === "signup" ? "Set up your business workspace" : mode === "forgot" ? "Verify with your full name and phone number" : "Welcome back to your workspace"}
+      >
+        {form}
+      </AuthDrawer>
+
+      {showWelcome && (
+        <WelcomeScreen
+          onComplete={() => {
+            window.localStorage.setItem(WELCOME_SEEN_KEY, "1");
+            setShowWelcome(false);
+            setRevealed(true);
+          }}
+        />
+      )}
 
       {celebrate && (
         <Celebration

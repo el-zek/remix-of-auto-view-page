@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, X, LogIn, UserPlus } from "lucide-react";
+import { Loader2, X, LogIn, UserPlus, KeyRound } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
 import bizzLogo from "@/assets/bizz-logo.png";
 import { WelcomeScreen, WELCOME_SEEN_KEY } from "@/components/auth/welcome-screen";
@@ -11,7 +11,7 @@ import { Celebration } from "@/components/auth/celebration";
 import { BusinessProfileStep } from "@/components/auth/signup-scope-steps";
 import { savePendingScope } from "@/lib/onboarding-scope";
 import { EMPTY_CHARACTERISTICS, type BusinessCharacteristics } from "@/lib/business-scope";
-import { formatPhone, isValidPhone, normalizePhone, phoneIdentity } from "@/lib/phone-auth";
+import { isValidPhone, normalizePhone, phoneIdentity } from "@/lib/phone-auth";
 import { uploadBusinessLogo } from "@/lib/business-logo";
 import { resetPasswordWithIdentity } from "@/lib/password-reset.functions";
 
@@ -31,23 +31,33 @@ export const Route = createFileRoute("/auth")({
 });
 
 const inputCls =
-  "w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-amber-400/60";
+  "w-full rounded-2xl border border-white/5 bg-slate-950/50 px-5 py-4 text-sm text-white placeholder:text-slate-600 outline-none transition focus:border-amber-500/50 focus:ring-1 focus:ring-amber-500/50";
+
+const labelCls =
+  "ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500";
 
 type Mode = "signin" | "signup" | "forgot" | null;
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <label className={labelCls}>{label}</label>
+      {children}
+    </div>
+  );
+}
 
 function AuthDrawer({
   open,
   onClose,
   title,
   subtitle,
-  icon,
   children,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   subtitle: string;
-  icon: ReactNode;
   children: ReactNode;
 }) {
   useEffect(() => {
@@ -64,39 +74,42 @@ function AuthDrawer({
     >
       <div
         onClick={onClose}
-        className={`absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity ${open ? "opacity-100" : "opacity-0"}`}
+        className={`absolute inset-0 bg-slate-950/60 backdrop-blur-sm transition-opacity ${open ? "opacity-100" : "opacity-0"}`}
       />
-      <div
-        className={`absolute inset-x-0 bottom-0 mx-auto flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-t-3xl border border-white/15 bg-[#0b0d12]/95 text-white shadow-[0_-30px_90px_-30px_rgba(0,0,0,0.9)] backdrop-blur-xl transition-all duration-300 ease-out sm:inset-auto sm:left-1/2 sm:top-1/2 sm:max-h-[88vh] sm:-translate-x-1/2 sm:rounded-3xl sm:shadow-[0_40px_100px_-40px_rgba(0,0,0,0.95)] ${
-          open
-            ? "translate-y-0 sm:-translate-y-1/2 sm:scale-100 sm:opacity-100"
-            : "translate-y-full sm:translate-y-[-46%] sm:scale-95 sm:opacity-0"
-        }`}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <div className="flex items-start gap-3 border-b border-white/[0.07] bg-white/[0.02] px-5 py-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-amber-300/30 bg-amber-400/10 text-amber-300">
-            {icon}
-          </span>
-          <div className="min-w-0 flex-1">
-            <h2 className="truncate font-display text-lg font-bold leading-tight">{title}</h2>
-            <p className="mt-0.5 text-sm text-white/55">{subtitle}</p>
-          </div>
-          <button
-            onClick={onClose}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-xl border border-white/10 bg-white/[0.06] text-white/70 transition hover:bg-white/15 hover:text-white"
-            aria-label="Close"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
+      <div className="absolute inset-x-0 bottom-0 flex justify-center px-3 pb-3 sm:inset-0 sm:items-center sm:p-6">
         <div
-          className="min-h-0 flex-1 overflow-y-auto px-5 py-5"
-          style={{ paddingBottom: "calc(1.25rem + env(safe-area-inset-bottom))" }}
+          className={`flex max-h-[92vh] w-full max-w-md flex-col overflow-hidden rounded-[2.5rem] border border-white/10 bg-slate-900/80 text-white shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-out ${
+            open
+              ? "translate-y-0 sm:scale-100 sm:opacity-100"
+              : "translate-y-full sm:translate-y-6 sm:scale-95 sm:opacity-0"
+          }`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={title}
         >
-          {children}
+          {/* Handle */}
+          <div className="mx-auto mt-4 h-1 w-12 shrink-0 rounded-full bg-white/10" />
+
+          <div className="flex items-start justify-between px-8 pt-6">
+            <div>
+              <h2 className="font-display text-2xl font-bold tracking-tight text-white">{title}</h2>
+              <p className="mt-1 text-xs text-slate-400">{subtitle}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-white/10 bg-white/5 text-white/60 transition hover:bg-white/10 hover:text-white"
+              aria-label="Close"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          <div
+            className="min-h-0 flex-1 overflow-y-auto px-8 pb-8 pt-6"
+            style={{ paddingBottom: "calc(2rem + env(safe-area-inset-bottom))" }}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>
@@ -223,45 +236,70 @@ function AuthPage() {
     }
   };
 
+  const primaryBtn =
+    "flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-4 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/10 transition hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60";
+
   const form = (
     <>
-      <form onSubmit={submit} className="space-y-3">
+      <form onSubmit={submit} className="space-y-4">
         {mode === "signup" && (
-          <div className="mb-5 flex items-center justify-between text-[11px] font-medium uppercase tracking-[0.16em] text-white/45">
-            {["Account", "Business Profile"].map((label, index) => (
-              <span key={label} className={signupStep === index + 1 ? "text-amber-300" : undefined}>
-                {index + 1}. {label}
-              </span>
-            ))}
+          <div className="mb-2 flex items-center gap-3">
+            {["Account", "Business Profile"].map((label, index) => {
+              const active = signupStep === index + 1;
+              return (
+                <div key={label} className="flex flex-1 items-center gap-2">
+                  <span
+                    className={`grid h-6 w-6 shrink-0 place-items-center rounded-full text-[10px] font-bold ${
+                      active ? "bg-amber-500 text-slate-950" : "border border-white/10 bg-white/5 text-slate-500"
+                    }`}
+                  >
+                    {index + 1}
+                  </span>
+                  <span
+                    className={`text-[10px] font-bold uppercase tracking-[0.18em] ${
+                      active ? "text-amber-500" : "text-slate-500"
+                    }`}
+                  >
+                    {label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
         {mode === "signup" && signupStep === 1 && (
           <>
-            <input
-              className={inputCls}
-              required
-              placeholder="Full name"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-            />
-            <input
-              className={inputCls}
-              type="tel"
-              inputMode="tel"
-              required
-              placeholder="Phone number (07XX XXX XXX)"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-            <input
-              className={inputCls}
-              type="password"
-              required
-              minLength={6}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Field label="Full name">
+              <input
+                className={inputCls}
+                required
+                placeholder="e.g. Zela Kambona"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+            </Field>
+            <Field label="Phone number">
+              <input
+                className={inputCls}
+                type="tel"
+                inputMode="tel"
+                required
+                placeholder="07XX XXX XXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </Field>
+            <Field label="Password">
+              <input
+                className={inputCls}
+                type="password"
+                required
+                minLength={6}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Field>
           </>
         )}
         {mode === "signup" && signupStep === 2 && (
@@ -274,24 +312,28 @@ function AuthPage() {
         )}
         {mode === "signin" && (
           <>
-            <input
-              className={inputCls}
-              type="tel"
-              inputMode="tel"
-              required
-              placeholder="Phone number"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-            />
-            <input
-              className={inputCls}
-              type="password"
-              required
-              minLength={6}
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <Field label="Phone number">
+              <input
+                className={inputCls}
+                type="tel"
+                inputMode="tel"
+                required
+                placeholder="07XX XXX XXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </Field>
+            <Field label="Password">
+              <input
+                className={inputCls}
+                type="password"
+                required
+                minLength={6}
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </Field>
           </>
         )}
         {mode === "signup" && (
@@ -300,16 +342,12 @@ function AuthPage() {
               <button
                 type="button"
                 onClick={() => setSignupStep((step) => step - 1)}
-                className="flex-1 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-sm font-semibold text-white/80 transition hover:bg-white/10"
+                className="flex-1 rounded-2xl border border-white/10 bg-white/5 py-4 text-sm font-semibold text-white/80 transition hover:bg-white/10"
               >
                 Back
               </button>
             )}
-            <button
-              type="submit"
-              disabled={busy}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
-            >
+            <button type="submit" disabled={busy} className={primaryBtn}>
               {busy && <Loader2 className="h-4 w-4 animate-spin" />}
               {signupStep === 2 ? "Create account" : "Next"}
             </button>
@@ -317,59 +355,67 @@ function AuthPage() {
         )}
         {mode === "forgot" && (
           <>
-            <input className={inputCls} required placeholder="Full name (as registered)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
-            <input className={inputCls} type="tel" inputMode="tel" required placeholder="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <input className={inputCls} type="password" required minLength={6} placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} />
+            <Field label="Full name (as registered)">
+              <input className={inputCls} required placeholder="Your full name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            </Field>
+            <Field label="Phone number">
+              <input className={inputCls} type="tel" inputMode="tel" required placeholder="07XX XXX XXX" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </Field>
+            <Field label="New password">
+              <input className={inputCls} type="password" required minLength={6} placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} />
+            </Field>
           </>
         )}
         {(mode === "signin" || mode === "forgot") && (
-          <button
-            type="submit"
-            disabled={busy}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
-          >
+          <button type="submit" disabled={busy} className={primaryBtn}>
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
             {mode === "forgot" ? "Reset password" : "Sign in"}
           </button>
         )}
       </form>
 
-      {mode === "signin" && (
-        <button
-          type="button"
-          onClick={() => { setPassword(""); setMode("forgot"); }}
-          className="mt-4 w-full text-center text-xs text-amber-200/80 transition hover:text-amber-100"
-        >
-          Forgot password?
-        </button>
-      )}
-
-      <button
-        onClick={() => {
-          setMode(mode === "signup" ? "signin" : mode === "forgot" ? "signin" : "signup");
-          setSignupStep(1);
-        }}
-        className="mt-5 w-full text-center text-xs text-white/60 transition hover:text-white"
-      >
-        {mode === "signin" ? "New here? Create an account" : "Already have an account? Sign in"}
-      </button>
+      <div className="mt-6 flex flex-col items-center gap-4">
+        {mode === "signin" && (
+          <button
+            type="button"
+            onClick={() => { setPassword(""); setMode("forgot"); }}
+            className="text-xs font-semibold text-amber-500/80 transition hover:text-amber-400"
+          >
+            Forgot password?
+          </button>
+        )}
+        <div className="h-px w-full bg-white/5" />
+        <p className="text-xs font-medium text-slate-500">
+          {mode === "signin" ? "New here?" : "Already have an account?"}
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === "signup" ? "signin" : mode === "forgot" ? "signin" : "signup");
+              setSignupStep(1);
+            }}
+            className="ml-1 font-bold text-white transition hover:text-amber-500"
+          >
+            {mode === "signin" ? "Create an account" : "Sign in"}
+          </button>
+        </p>
+      </div>
     </>
   );
 
   return (
-    <main className="relative grid min-h-screen place-items-end justify-center px-5 text-white sm:place-items-center">
+    <main className="relative grid min-h-screen place-items-end justify-center overflow-hidden px-5 text-white sm:place-items-center">
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 bg-cover bg-center"
+        className="pointer-events-none fixed inset-0 bg-slate-950"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 bg-cover bg-center opacity-40 grayscale"
         style={{ backgroundImage: `url(${welcomeBg})`, transform: "scale(1.05)" }}
       />
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0"
-        style={{
-          background:
-            "linear-gradient(180deg, rgba(18,12,8,0.45) 0%, rgba(16,10,6,0.66) 55%, rgba(12,8,5,0.94) 100%)",
-        }}
+        className="pointer-events-none fixed inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20"
       />
 
       <div
@@ -385,42 +431,45 @@ function AuthPage() {
         <img
           src={bizzLogo}
           alt="Bizz Automators"
-          className="h-11 w-auto opacity-95 drop-shadow-[0_6px_20px_rgba(0,0,0,0.55)]"
+          className="h-10 w-auto opacity-95"
         />
-        <h1 className="mt-5 font-display text-3xl font-semibold leading-tight tracking-[-0.02em] text-white">
+        <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.34em] text-white/40">
+          Bizz Automators
+        </p>
+        <h1 className="mt-6 font-display text-4xl font-bold leading-tight tracking-[-0.02em] text-white">
           Welcome
         </h1>
-        <p className="mt-2 text-sm text-white/55">Simplify your business.</p>
+        <p className="mt-2 text-sm text-slate-400">Simplify your business.</p>
 
-        <div className="mt-7 space-y-3">
+        <div className="mt-8 space-y-3">
           <button
             onClick={() => setMode("signup")}
-            className="flex w-full items-center gap-3 rounded-2xl border border-amber-200/25 bg-[rgba(46,29,16,0.55)] p-4 text-left backdrop-blur-xl transition hover:border-amber-200/45 hover:bg-[rgba(58,36,19,0.6)]"
+            className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-left backdrop-blur-2xl transition hover:border-amber-500/30 hover:bg-slate-900/90"
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-gradient-to-b from-amber-300 to-amber-500 text-[#1a1005]">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20">
               <UserPlus className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Sign up</span>
-              <span className="block text-xs text-white/50">Create your account</span>
+              <span className="block text-xs text-slate-400">Create your account</span>
             </span>
           </button>
           <button
             onClick={() => setMode("signin")}
-            className="flex w-full items-center gap-3 rounded-2xl border border-white/12 bg-[rgba(24,16,11,0.5)] p-4 text-left backdrop-blur-xl transition hover:border-white/25 hover:bg-[rgba(32,21,14,0.6)]"
+            className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-left backdrop-blur-2xl transition hover:border-white/20 hover:bg-slate-900/90"
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/[0.07] text-amber-200">
+            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 text-amber-500">
               <LogIn className="h-5 w-5" />
             </span>
             <span className="min-w-0 flex-1">
               <span className="block text-sm font-semibold">Sign in</span>
-              <span className="block text-xs text-white/50">Welcome back</span>
+              <span className="block text-xs text-slate-400">Welcome back</span>
             </span>
           </button>
         </div>
 
-        <p className="mt-7 text-center text-[11px] uppercase tracking-[0.28em] text-white/30">
-          Bizz Automators
+        <p className="mt-8 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-white/25">
+          Built for growing businesses
         </p>
       </div>
 
@@ -429,7 +478,6 @@ function AuthPage() {
         onClose={() => setMode(null)}
         title={mode === "signup" ? "Create account" : mode === "forgot" ? "Reset password" : "Sign in"}
         subtitle={mode === "signup" ? "Set up your business workspace" : mode === "forgot" ? "Verify with your full name and phone number" : "Welcome back to your workspace"}
-        icon={mode === "signup" ? <UserPlus className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
       >
         {form}
       </AuthDrawer>

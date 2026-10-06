@@ -13,6 +13,7 @@ import { savePendingScope } from "@/lib/onboarding-scope";
 import { EMPTY_CHARACTERISTICS, type BusinessCharacteristics } from "@/lib/business-scope";
 import { formatPhone, isValidPhone, normalizePhone, phoneIdentity } from "@/lib/phone-auth";
 import { uploadBusinessLogo } from "@/lib/business-logo";
+import { resetPasswordWithIdentity } from "@/lib/password-reset.functions";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -32,7 +33,7 @@ export const Route = createFileRoute("/auth")({
 const inputCls =
   "w-full rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3 text-sm text-white placeholder-white/40 outline-none transition focus:border-amber-400/60";
 
-type Mode = "signin" | "signup" | null;
+type Mode = "signin" | "signup" | "forgot" | null;
 
 function AuthDrawer({
   open,
@@ -199,6 +200,14 @@ function AuthPage() {
         setMode(null);
         setSignupStep(1);
         setCelebrate(true);
+      } else if (mode === "forgot") {
+        if (!isValidPhone(phone)) throw new Error("Enter a valid phone number");
+        if (password.length < 6) throw new Error("New password must be at least 6 characters");
+        const res = await resetPasswordWithIdentity({ data: { phone, fullName, newPassword: password } });
+        if (!res.ok) throw new Error(res.message);
+        toast.success(res.message);
+        setPassword("");
+        setMode("signin");
       } else {
         if (!isValidPhone(phone)) throw new Error("Enter a valid phone number");
         const { error } = await supabase.auth.signInWithPassword({
@@ -306,21 +315,38 @@ function AuthPage() {
             </button>
           </div>
         )}
-        {mode === "signin" && (
+        {mode === "forgot" && (
+          <>
+            <input className={inputCls} required placeholder="Full name (as registered)" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+            <input className={inputCls} type="tel" inputMode="tel" required placeholder="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            <input className={inputCls} type="password" required minLength={6} placeholder="New password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          </>
+        )}
+        {(mode === "signin" || mode === "forgot") && (
           <button
             type="submit"
             disabled={busy}
             className="flex w-full items-center justify-center gap-2 rounded-xl bg-amber-500 px-4 py-3 text-sm font-semibold text-black transition hover:bg-amber-400 disabled:opacity-60"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />}
-            {mode === "signin" ? "Sign in" : "Create account"}
+            {mode === "forgot" ? "Reset password" : "Sign in"}
           </button>
         )}
       </form>
 
+      {mode === "signin" && (
+        <button
+          type="button"
+          onClick={() => { setPassword(""); setMode("forgot"); }}
+          className="mt-4 w-full text-center text-xs text-amber-200/80 transition hover:text-amber-100"
+        >
+          Forgot password?
+        </button>
+      )}
+
       <button
         onClick={() => {
-          setMode(mode === "signin" ? "signup" : "signin");
+          setMode(mode === "signup" ? "signin" : mode === "forgot" ? "signin" : "signup");
           setSignupStep(1);
         }}
         className="mt-5 w-full text-center text-xs text-white/60 transition hover:text-white"
@@ -401,8 +427,8 @@ function AuthPage() {
       <AuthDrawer
         open={mode !== null}
         onClose={() => setMode(null)}
-        title={mode === "signup" ? "Create account" : "Sign in"}
-        subtitle={mode === "signup" ? "Set up your business workspace" : "Welcome back to your workspace"}
+        title={mode === "signup" ? "Create account" : mode === "forgot" ? "Reset password" : "Sign in"}
+        subtitle={mode === "signup" ? "Set up your business workspace" : mode === "forgot" ? "Verify with your full name and phone number" : "Welcome back to your workspace"}
         icon={mode === "signup" ? <UserPlus className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
       >
         {form}

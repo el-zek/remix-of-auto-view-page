@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Loader2 } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
 import { Celebration } from "@/components/auth/celebration";
 
@@ -34,7 +34,7 @@ const inputCls =
 const labelCls =
   "ml-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500";
 
-type Mode = "signin" | "signup" | "forgot";
+type Mode = "choice" | "signin" | "signup" | "forgot";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -47,7 +47,7 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<Mode>("signin");
+  const [mode, setMode] = useState<Mode>("choice");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -161,7 +161,19 @@ function AuthPage() {
     "flex w-full items-center justify-center gap-2 rounded-2xl bg-amber-500 py-4 text-sm font-bold text-slate-950 shadow-lg shadow-amber-500/10 transition hover:bg-amber-400 active:scale-[0.98] disabled:opacity-60";
 
   const headline =
-    mode === "signin" ? ["SIGN", "IN."] : mode === "signup" ? ["JOIN", "NOW."] : ["RESET", "ACCESS."];
+    mode === "choice"
+      ? ["WELCOME", "."]
+      : mode === "signin"
+        ? ["SIGN", "IN."]
+        : mode === "signup"
+          ? ["JOIN", "NOW."]
+          : ["RESET", "ACCESS."];
+
+  const chooseAuth = (nextMode: "signin" | "signup") => {
+    setMode(nextMode);
+    setSignupStep(1);
+    setPassword("");
+  };
 
   const form = (
     <>
@@ -366,9 +378,60 @@ function AuthPage() {
           </p>
         </div>
 
-        {/* Auth card — the entry point itself */}
-        <div className="mb-8 mt-auto rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl">
-          {form}
+        <div className="mb-8 mt-auto">
+          {mode === "choice" ? (
+            <div className="space-y-3" aria-label="Choose how to continue">
+              <button
+                type="button"
+                onClick={() => chooseAuth("signup")}
+                className="group flex min-h-24 w-full items-center border-y border-white/15 bg-white/[0.035] px-5 text-left backdrop-blur-xl transition hover:bg-white/[0.08]"
+              >
+                <span className="mr-5 self-start pt-6 text-[10px] font-bold tracking-[0.22em] text-amber-500">01</span>
+                <span className="flex flex-1 items-center justify-between py-5">
+                  <span>
+                    <span className="block text-2xl font-bold text-white">Sign up</span>
+                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Create a business account</span>
+                  </span>
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 text-amber-500 transition group-hover:border-amber-500/50 group-hover:bg-amber-500 group-hover:text-slate-950">
+                    <ArrowUpRight className="h-5 w-5" aria-hidden />
+                  </span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => chooseAuth("signin")}
+                className="group flex min-h-24 w-full items-center border-b border-white/15 bg-white/[0.035] px-5 text-left backdrop-blur-xl transition hover:bg-white/[0.08]"
+              >
+                <span className="mr-5 self-start pt-6 text-[10px] font-bold tracking-[0.22em] text-amber-500">02</span>
+                <span className="flex flex-1 items-center justify-between py-5">
+                  <span>
+                    <span className="block text-2xl font-bold text-white">Sign in</span>
+                    <span className="mt-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500">Continue to your workspace</span>
+                  </span>
+                  <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-white/15 text-amber-500 transition group-hover:border-amber-500/50 group-hover:bg-amber-500 group-hover:text-slate-950">
+                    <ArrowUpRight className="h-5 w-5" aria-hidden />
+                  </span>
+                </span>
+              </button>
+            </div>
+          ) : (
+            <div className="rounded-[2rem] border border-white/10 bg-white/[0.04] p-6 shadow-2xl shadow-black/40 backdrop-blur-2xl">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("choice");
+                  setSignupStep(1);
+                  setPassword("");
+                }}
+                className="mb-5 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400 transition hover:text-amber-500"
+              >
+                <ArrowLeft className="h-4 w-4" aria-hidden />
+                Back
+              </button>
+              {form}
+            </div>
+          )}
         </div>
 
         <div className="flex items-end justify-between pb-2 opacity-40">

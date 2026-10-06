@@ -2,11 +2,10 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, X, LogIn, UserPlus } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import welcomeBg from "@/assets/welcome-sunset.jpg";
-import bizzLogo from "@/assets/bizz-logo.png";
-import { WelcomeScreen, WELCOME_SEEN_KEY } from "@/components/auth/welcome-screen";
 import { Celebration } from "@/components/auth/celebration";
+import { Button } from "@/components/ui/button";
 
 import { BusinessProfileStep } from "@/components/auth/signup-scope-steps";
 import { savePendingScope } from "@/lib/onboarding-scope";
@@ -129,8 +128,6 @@ function AuthPage() {
   });
   const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
-  const [revealed, setRevealed] = useState(true);
   const [celebrate, setCelebrate] = useState(false);
   const celebratingRef = useRef(false);
   const hasSessionRef = useRef(false);
@@ -139,12 +136,6 @@ function AuthPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) {
         navigate({ to: "/dashboard", replace: true });
-        return;
-      }
-      // First launch only: returning users go straight to sign in.
-      if (window.localStorage.getItem(WELCOME_SEEN_KEY) !== "1") {
-        setShowWelcome(true);
-        setRevealed(false);
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
@@ -418,59 +409,24 @@ function AuthPage() {
         className="pointer-events-none fixed inset-0 bg-gradient-to-t from-slate-950 via-slate-950/80 to-slate-950/20"
       />
 
-      <div
-        className="relative w-full max-w-[430px]"
-        style={{
-          paddingBottom: "calc(2.25rem + env(safe-area-inset-bottom))",
-          paddingTop: "2rem",
-          transform: revealed ? "translate3d(0,0,0)" : "translate3d(0, 24px, 0)",
-          opacity: revealed ? 1 : 0,
-          transition: "transform 620ms cubic-bezier(0.22,1,0.36,1), opacity 520ms ease",
-        }}
-      >
-        <img
-          src={bizzLogo}
-          alt="Bizz Automators"
-          className="h-10 w-auto opacity-95"
-        />
-        <p className="mt-3 text-[10px] font-medium uppercase tracking-[0.34em] text-white/40">
-          Bizz Automators
-        </p>
-        <h1 className="mt-6 font-display text-4xl font-bold leading-tight tracking-[-0.02em] text-white">
-          Welcome
-        </h1>
-        <p className="mt-2 text-sm text-slate-400">Simplify your business.</p>
-
-        <div className="mt-8 space-y-3">
-          <button
-            onClick={() => setMode("signup")}
-            className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-left backdrop-blur-2xl transition hover:border-amber-500/30 hover:bg-slate-900/90"
-          >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-amber-500 text-slate-950 shadow-lg shadow-amber-500/20">
-              <UserPlus className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">Sign up</span>
-              <span className="block text-xs text-slate-400">Create your account</span>
-            </span>
-          </button>
-          <button
+      <div className="relative w-full max-w-sm py-8">
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => setMode("signin")}
-            className="flex w-full items-center gap-3 rounded-3xl border border-white/10 bg-slate-900/70 p-4 text-left backdrop-blur-2xl transition hover:border-white/20 hover:bg-slate-900/90"
+            className="h-11 rounded-lg border-white/15 bg-slate-950/35 text-sm font-medium text-white shadow-none backdrop-blur-xl hover:border-white/30 hover:bg-white/10 hover:text-white"
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/5 text-amber-500">
-              <LogIn className="h-5 w-5" />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block text-sm font-semibold">Sign in</span>
-              <span className="block text-xs text-slate-400">Welcome back</span>
-            </span>
-          </button>
+            Sign in
+          </Button>
+          <Button
+            type="button"
+            onClick={() => setMode("signup")}
+            className="h-11 rounded-lg bg-amber-500 text-sm font-semibold text-slate-950 shadow-none hover:bg-amber-400"
+          >
+            Sign up
+          </Button>
         </div>
-
-        <p className="mt-8 text-center text-[10px] font-medium uppercase tracking-[0.3em] text-white/25">
-          Built for growing businesses
-        </p>
       </div>
 
       <AuthDrawer
@@ -481,16 +437,6 @@ function AuthPage() {
       >
         {form}
       </AuthDrawer>
-
-      {showWelcome && (
-        <WelcomeScreen
-          onComplete={() => {
-            window.localStorage.setItem(WELCOME_SEEN_KEY, "1");
-            setShowWelcome(false);
-            setRevealed(true);
-          }}
-        />
-      )}
 
       {celebrate && (
         <Celebration

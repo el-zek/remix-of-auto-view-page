@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.5"
+    PostgrestVersion: "14.18"
   }
   public: {
     Tables: {
@@ -53,6 +53,45 @@ export type Database = {
         }
         Relationships: []
       }
+      business_characteristics: {
+        Row: {
+          business_id: string
+          business_type: string | null
+          does_export: boolean
+          does_import: boolean
+          employee_count: number | null
+          flags: Json
+          legal_form: string | null
+          sector: string | null
+          tax_registrations: string[]
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          business_type?: string | null
+          does_export?: boolean
+          does_import?: boolean
+          employee_count?: number | null
+          flags?: Json
+          legal_form?: string | null
+          sector?: string | null
+          tax_registrations?: string[]
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          business_type?: string | null
+          does_export?: boolean
+          does_import?: boolean
+          employee_count?: number | null
+          flags?: Json
+          legal_form?: string | null
+          sector?: string | null
+          tax_registrations?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       business_settings: {
         Row: {
           created_at: string
@@ -77,6 +116,30 @@ export type Database = {
           setting_value?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      business_subscription: {
+        Row: {
+          business_id: string
+          expires_at: string | null
+          plan: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          business_id: string
+          expires_at?: string | null
+          plan?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          business_id?: string
+          expires_at?: string | null
+          plan?: string
+          status?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -2972,6 +3035,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_capability: {
+        Args: { _business_id: string; _capability: string }
+        Returns: boolean
+      }
       has_permission: {
         Args: { _permission_key: string; _user_id: string }
         Returns: boolean

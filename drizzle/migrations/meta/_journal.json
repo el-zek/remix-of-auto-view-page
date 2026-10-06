@@ -1,34 +1,5 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": [
-    {
-      "idx": 0,
-      "version": "7",
-      "when": 1791277005572,
-      "tag": "0000_create_core_tables",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1791277028955,
-      "tag": "0001_add_constraints_indexes",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1791277051857,
-      "tag": "0002_add_functions_triggers",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1791277067204,
-      "tag": "0003_add_rls_policies",
-      "breakpoints": true
-    }
-  ]
+  "entries": []
 }

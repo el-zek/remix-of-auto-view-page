@@ -15,6 +15,13 @@
       "when": 1791277028955,
       "tag": "0001_add_constraints_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791277051857,
+      "tag": "0002_add_functions_triggers",
+      "breakpoints": true
     }
   ]
 }

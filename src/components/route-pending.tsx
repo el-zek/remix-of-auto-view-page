@@ -8,6 +8,9 @@ let appHasResolved = false;
 
 export function markAppResolved() {
   appHasResolved = true;
+  if (typeof window !== "undefined") {
+    (window as any).__appResolved = true;
+  }
 }
 
 export function RoutePending() {

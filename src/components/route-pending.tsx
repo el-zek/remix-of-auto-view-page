@@ -1,17 +1,17 @@
-import { useRouter } from "@tanstack/react-router";
 import bizzLogo from "@/assets/bizz-logo.png";
 
 /**
- * Loading state for route transitions.
- * - App boot / hard refresh / first entry: branded logo splash.
- * - In-app navigation once content is already mounted: quiet skeleton, no logo.
+ * True once the router has completed its very first navigation. While false,
+ * route loading shows the branded splash; afterwards, a quiet skeleton.
  */
+let appHasResolved = false;
+
+export function markAppResolved() {
+  appHasResolved = true;
+}
+
 export function RoutePending() {
-  const router = useRouter();
-  const booted = router.state.matches.some(
-    (match) => match.status === "success" && match.routeId !== "__root__",
-  );
-  if (booted) return <InnerSkeleton />;
+  if (appHasResolved) return <InnerSkeleton />;
 
   return (
     <div

@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import { RoutePending } from "./components/route-pending";
+import { RoutePending, markAppResolved } from "./components/route-pending";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({

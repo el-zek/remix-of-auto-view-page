@@ -1,7 +1,7 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import { RoutePending } from "./components/route-pending";
+import { RoutePending, markAppResolved } from "./components/route-pending";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
@@ -30,6 +30,10 @@ export const getRouter = () => {
     defaultPendingMinMs: 220,
     defaultPendingComponent: RoutePending,
   });
+
+  // Once the first navigation resolves, later loading states use the quiet
+  // skeleton instead of the branded startup splash.
+  router.subscribe("onResolved", () => markAppResolved());
 
   return router;
 };

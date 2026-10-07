@@ -31,6 +31,10 @@ export const getRouter = () => {
     defaultPendingComponent: RoutePending,
   });
 
+  // Once the first navigation resolves, later loading states use the quiet
+  // skeleton instead of the branded startup splash.
+  router.subscribe("onResolved", () => markAppResolved());
+
   return router;
 };
 

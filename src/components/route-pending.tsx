@@ -1,6 +1,18 @@
+import { useRouter } from "@tanstack/react-router";
 import bizzLogo from "@/assets/bizz-logo.png";
 
+/**
+ * Branded startup splash. Shows only while the very first route is loading
+ * (app boot, hard refresh, entry via /auth). Once any real route content has
+ * resolved, in-app navigation renders no splash at all.
+ */
 export function RoutePending() {
+  const router = useRouter();
+  const booted = router.state.matches.some(
+    (match) => match.status === "success" && match.routeId !== "__root__",
+  );
+  if (booted) return null;
+
   return (
     <div
       className="grid min-h-[70vh] w-full place-items-center bg-background md:min-h-screen"

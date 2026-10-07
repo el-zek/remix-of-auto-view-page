@@ -410,19 +410,19 @@ function AuthPage() {
       />
 
       <div className="relative w-full max-w-sm py-8">
-        <div className="grid grid-cols-2 gap-3">
+        <div className="mx-auto flex w-fit flex-col items-stretch gap-3">
           <Button
             type="button"
             variant="outline"
             onClick={() => setMode("signin")}
-            className="h-11 rounded-lg border-white/15 bg-slate-950/35 text-sm font-medium text-white shadow-none backdrop-blur-xl hover:border-white/30 hover:bg-white/10 hover:text-white"
+            className="w-44 h-11 rounded-lg border-white/15 bg-slate-950/35 text-sm font-medium text-white shadow-none backdrop-blur-xl hover:border-white/30 hover:bg-white/10 hover:text-white"
           >
             Sign in
           </Button>
           <Button
             type="button"
             onClick={() => setMode("signup")}
-            className="h-11 rounded-lg bg-amber-500 text-sm font-semibold text-slate-950 shadow-none hover:bg-amber-400"
+            className="w-44 h-11 rounded-lg bg-amber-500 text-sm font-semibold text-slate-950 shadow-none hover:bg-amber-400"
           >
             Sign up
           </Button>
